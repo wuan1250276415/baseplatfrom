@@ -1,0 +1,73 @@
+services:
+  database:
+    image: mysql:8.4.2
+    container_name: database
+    hostname: database
+    environment:
+      MYSQL_DATABASE: ${DATABASE_DB}
+      MYSQL_USER: ${DATABASE_USER}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD}
+    ports:
+      - ${DATABASE_EXPOSE_PORT}:3306
+    volumes:
+      - ${DATABASE_STORE}:/var/lib/mysql
+    restart: always
+  web:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      extra_hosts:
+        - host.docker.internal:host-gateway
+    container_name: web
+    hostname: web
+    environment:
+      LOG_PATH: ${LOG_PATH}
+      DATABASE_DB: ${DATABASE_DB}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST_PORT: ${DATABASE_HOST_PORT}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      ALLOWED_METHODS: ${ALLOWED_METHODS}
+      ALLOWED_HEADERS: ${ALLOWED_HEADERS}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_EXPOSE_PORT: ${REDIS_EXPOSE_PORT}
+      RESOURCE_HANDLER: ${RESOURCE_HANDLER}
+      RESOURCE_LOCATIONS: ${RESOURCE_LOCATIONS}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    depends_on:
+      - database
+    ports:
+      - ${WEB_EXPOSE_PORT}:8080
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ${LOG_PATH}:/var/log
+    restart: always
+  redis:
+    image: redis:7.4.0
+    container_name: redis
+    hostname: redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - ${REDIS_EXPOSE_PORT}:6379
+    volumes:
+      - ${REDIS_STORE}:/data
+    restart: always
+  rabbitmq:
+    image: rabbitmq:4.0.3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - ${RABBITMQ_PORT}:5672
+      - ${RABBITMQ_UI_PORT}:15672
+    volumes:
+      - ${RABBITMQ_DATA_STORE}:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DATA_STORE: ${RABBITMQ_DATA_STORE}
